@@ -1,0 +1,58 @@
+== with_associated_scope
+
+DRYing up named_scopes
+
+  class Organization < ActiveRecord::Base
+    named_scope :active, :conditions => { :active => true }
+  end
+
+  class Person < ActiveRecord::Base
+    belongs_to :organization
+  end
+
+Normally, to find all the people whose organization is active, you'd have to duplicate the logic in `Organziation`'s named_scope:
+
+  named_scope :with_active_organization, :conditions => {:organizations => {:active => true}}, :joins => :organization
+
+That isn't DRY.  With this plugin, you can simply write:
+
+  Person.with_associated_scope(:organization, :active)
+
+and get back all the people whose organization is active.
+
+== Deeply nested attributes
+
+Support exists for deeply nested attributes.  Continuing the example above:
+
+  class Task < ActiveRecord::Base
+    belongs_to :person
+  end
+  
+  Task.with_associated_scope({:person => :organization}, :active)
+
+And you'll get all the tasks whose associated person's organization is active.
+
+== Procedural named scopes
+
+The most powerful feature of named_scopes is the ability to pass a lambda to have the conditions vary.  For example:
+
+  class Organization < ActiveRecord::Base
+    named_scope :created_after, lambda { |date|
+      :conditions => { "organizations.created_at > ?", date }
+    }
+  end
+
+with_associated_scope simply passes the values along:
+
+  Person.with_associated_scope(:organization, :created_after, 1.year.ago)
+  Task.with_associated_scope({:person => :organization}, :created_after, 1.year.ago)
+
+== Status
+
+This is pre-alpha software; while it basically seems to work, the test coverage is pretty minimal
+
+Your contributions, forkings, comments and feedback are greatly welcomed.
+
+== License
+
+with_associated_scope is available under the {MIT License}[http://en.wikipedia.org/wiki/MIT_License]
